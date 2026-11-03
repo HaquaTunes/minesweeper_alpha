@@ -169,6 +169,32 @@ export class Board {
     return this.open(cand[Math.floor(this.rng() * cand.length)]);
   }
 
+  /** お掃除ブラシ: 選んだマスと周囲8マスのうち、安全なマスをすべて開く */
+  sweep(i: number): OpenResult {
+    const res: OpenResult = { opened: 0, hits: 0 };
+    if (!this.placed) return res;
+    for (const j of [i, ...this.neighbors(i)]) {
+      const c = this.cells[j];
+      if (c.state === 'hidden' && !c.mine) res.opened += this.open(j).opened;
+    }
+    return res;
+  }
+
+  /** 羅針盤: 未発見の地雷をn個、旗で教える。実際に立てた数を返す */
+  hintMines(n: number): number {
+    const mines: number[] = [];
+    this.cells.forEach((c, i) => {
+      if (c.mine && c.state === 'hidden') mines.push(i);
+    });
+    const k = Math.min(n, mines.length);
+    for (let a = 0; a < k; a++) {
+      const b = a + Math.floor(this.rng() * (mines.length - a));
+      [mines[a], mines[b]] = [mines[b], mines[a]];
+      this.cells[mines[a]].state = 'flag';
+    }
+    return k;
+  }
+
   remainingMines(): number {
     return this.mineCount - this.cells.filter((c) => c.state === 'flag' || c.exploded).length;
   }
